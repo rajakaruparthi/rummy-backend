@@ -7,6 +7,8 @@ import com.local.rummy.request.RoomId;
 import com.local.rummy.request.UpdateRoomRequest;
 import com.local.rummy.response.RoomIdResponse;
 import com.local.rummy.service.RoomService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,8 @@ import java.util.Optional;
 
 @Service
 public class RoomServiceImpl implements RoomService {
+
+    Logger logger = LoggerFactory.getLogger(RoomServiceImpl.class);
 
     @Autowired
     private RoomRepository roomRepository;
@@ -46,13 +50,17 @@ public class RoomServiceImpl implements RoomService {
     }
 
     public Room updateRooms(UpdateRoomRequest updateRoom) {
-        System.out.println(updateRoom);
-        System.out.println(updateRoom.getRoomId());
         Room room = roomRepository.findById(updateRoom.getRoomId()).get();
         Players player = new Players();
         player.setName(updateRoom.getUsername());
-        room.getPlayersList().add(player);
+        List<Players> playersList = room.getPlayersList();
+        if(playersList == null) {
+            playersList = new ArrayList<>();
+        }
 
+        playersList.add(player);
+        room.setPlayersList(playersList);
+        logger.info("room with the players added -- {}", player.getName());
         try{
             roomRepository.save(room);
         }catch(Exception e) {

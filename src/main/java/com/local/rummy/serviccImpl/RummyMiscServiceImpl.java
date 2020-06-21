@@ -1,9 +1,10 @@
 package com.local.rummy.serviccImpl;
 
-import com.local.rummy.entity.PlayerCards;
-import com.local.rummy.entity.Players;
-import com.local.rummy.entity.Room;
+import com.local.rummy.entity.*;
+import com.local.rummy.repository.FinalCardsRepository;
 import com.local.rummy.repository.RoomRepository;
+import com.local.rummy.request.FinalCards;
+import com.local.rummy.request.RoomId;
 import com.local.rummy.request.ShuffleCardsRequest;
 import com.local.rummy.response.DiscardCardsResponse;
 import com.local.rummy.service.RummyMiscService;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class RummyMiscServiceImpl implements RummyMiscService {
@@ -23,6 +25,9 @@ public class RummyMiscServiceImpl implements RummyMiscService {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private FinalCardsRepository finalCardsRepository;
 
     @Override
     public DiscardCardsResponse shuffleCards(ShuffleCardsRequest request) {
@@ -56,6 +61,31 @@ public class RummyMiscServiceImpl implements RummyMiscService {
         DiscardCardsResponse discardResponse = distributeCards(deck, room);
         logger.info("discard response -- {}", discardResponse);
         return discardResponse;
+    }
+
+    @Override
+    public void saveFinalCards(List<FinalCards> finalCards, String roomId) {
+        logger.info("inside saveFinalCards with request object {}", finalCards.get(0).cards);
+        FinalShowCards finalShowCards = new FinalShowCards();
+        finalShowCards.setRoomId(roomId);
+        List<PlayersAttrs> playersAttrsList = finalCards.stream()
+                .map(each -> new PlayersAttrs(each.getCards(), each.getPlayerName(),  each.isFoldedFlag()))
+                .collect(Collectors.toList());
+        finalShowCards.setPlayersAttrsList(playersAttrsList);
+        finalCardsRepository.save(finalShowCards);
+    }
+
+
+    @Override
+    public FinalShowCards getFinalShowCards(RoomId roomId) {
+        logger.info("room id request {}", roomId.getId());
+        FinalShowCards finalShowCards = null;
+        try {
+            finalShowCards = finalCardsRepository.findById(roomId.getId()).get();
+        } catch (Exception e) {
+            logger.error("error occurred at {}", e);
+        }
+        return finalShowCards;
     }
 
     private DiscardCardsResponse distributeCards(Stack<String> cardValues, Room room) {
