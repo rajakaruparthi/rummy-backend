@@ -1,6 +1,8 @@
 package com.local.rummy.service;
 
 import com.local.rummy.entity.FinalShowCards;
+import com.local.rummy.entity.Room;
+import com.local.rummy.request.DeletePlayerRequest;
 import com.local.rummy.request.FinalCards;
 import com.local.rummy.request.RoomId;
 import com.local.rummy.request.ShuffleCardsRequest;
@@ -23,4 +25,7 @@ public interface RummyMiscService {
 
     @RequestMapping(path = "/pull-final-cards", method = RequestMethod.POST)
     FinalShowCards getFinalShowCards(@RequestBody RoomId roomId);
+
+    @RequestMapping(path = "/delete-player", method = RequestMethod.POST)
+    Room deletePlayersByRoom(@RequestBody DeletePlayerRequest deletePlayerRequest);
 }

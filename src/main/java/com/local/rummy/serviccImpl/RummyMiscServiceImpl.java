@@ -1,8 +1,10 @@
 package com.local.rummy.serviccImpl;
 
+import com.google.gson.Gson;
 import com.local.rummy.entity.*;
 import com.local.rummy.repository.FinalCardsRepository;
 import com.local.rummy.repository.RoomRepository;
+import com.local.rummy.request.DeletePlayerRequest;
 import com.local.rummy.request.FinalCards;
 import com.local.rummy.request.RoomId;
 import com.local.rummy.request.ShuffleCardsRequest;
@@ -65,28 +67,58 @@ public class RummyMiscServiceImpl implements RummyMiscService {
 
     @Override
     public void saveFinalCards(List<FinalCards> finalCards, String roomId) {
-        logger.info("inside saveFinalCards with request object {}", finalCards.get(0).cards);
+        Gson gson = new Gson();
+        logger.info("inside saveFinalCards with request object {}", gson.toJson(finalCards));
         FinalShowCards finalShowCards = new FinalShowCards();
         finalShowCards.setRoomId(roomId);
         List<PlayersAttrs> playersAttrsList = finalCards.stream()
-                .map(each -> new PlayersAttrs(each.getCards(), each.getPlayerName(),  each.isFoldedFlag()))
+                .map(each -> new PlayersAttrs(each.getCards(), each.getPlayerName(), each.isFoldedFlag()))
                 .collect(Collectors.toList());
         finalShowCards.setPlayersAttrsList(playersAttrsList);
-        finalCardsRepository.save(finalShowCards);
-    }
 
+        String s = gson.toJson(finalShowCards);
+        logger.info("show cards inside save show cards {}", s);
+
+        try {
+            finalCardsRepository.save(finalShowCards);
+        } catch (Exception e) {
+            logger.error("exception occurred while saving the final cards");
+        }
+    }
 
     @Override
     public FinalShowCards getFinalShowCards(RoomId roomId) {
         logger.info("room id request {}", roomId.getId());
-        FinalShowCards finalShowCards = null;
+        List<String> roomIds = new ArrayList<>();
+        roomIds.add(roomId.getId());
+        Optional<List<FinalShowCards>> finalcardsOpt = null;
         try {
-            finalShowCards = finalCardsRepository.findById(roomId.getId()).get();
+            finalcardsOpt = finalCardsRepository.findByRoomId(roomId.getId());
         } catch (Exception e) {
             logger.error("error occurred at {}", e);
         }
-        return finalShowCards;
+        logger.info("list of final show cards {}", finalcardsOpt);
+
+        return finalcardsOpt.isPresent() ? finalcardsOpt.get().get(0) : null;
     }
+
+    @Override
+    public Room deletePlayersByRoom(DeletePlayerRequest deletePlayerRequest) {
+        Optional<Room> roomOptional = roomRepository.findById(deletePlayerRequest.getRoomId());
+        Room room = roomOptional.get();
+        Gson gson = new Gson();
+        List<Players> playersList = room.getPlayersList();
+        logger.info("inside delete players by room method before deleting ..." + gson.toJson(playersList));
+
+        playersList.remove(deletePlayerRequest.getPlayerIndex());
+        room.setPlayersList(playersList);
+
+        logger.info("inside delete players by room method after deleting ... index {}, {} ",
+                deletePlayerRequest.getPlayerIndex(), gson.toJson(playersList));
+        roomRepository.save(room);
+        return room;
+    }
+
 
     private DiscardCardsResponse distributeCards(Stack<String> cardValues, Room room) {
 

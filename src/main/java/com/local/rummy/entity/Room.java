@@ -1,11 +1,12 @@
 package com.local.rummy.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document
+@Document("Room")
 public class Room {
 
     @Id
@@ -24,6 +25,9 @@ public class Room {
     public Room(String roomname, List<Players> playersList) {
         this.roomname = roomname;
         this.playersList = playersList;
+    }
+
+    public Room() {
     }
 
     public String getPassword() {
