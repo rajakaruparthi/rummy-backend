@@ -28,4 +28,7 @@ public interface RummyMiscService {
 
     @RequestMapping(path = "/delete-player", method = RequestMethod.POST)
     Room deletePlayersByRoom(@RequestBody DeletePlayerRequest deletePlayerRequest);
+
+    @RequestMapping(path = "/delete-show-cards", method = RequestMethod.DELETE)
+    void deleteAllShowCards();
 }

@@ -34,6 +34,8 @@ public class RummyMiscServiceImpl implements RummyMiscService {
     @Override
     public DiscardCardsResponse shuffleCards(ShuffleCardsRequest request) {
         String roomId = request.getRoomId();
+        int distributeIndex = request.getDistributeIndex();
+
         Optional<Room> roomOptional = roomRepository.findById(roomId);
         Room room = roomOptional.get();
         logger.info("room id -- {}", room.getId());
@@ -60,7 +62,7 @@ public class RummyMiscServiceImpl implements RummyMiscService {
         Collections.shuffle(cards);
         Stack<String> deck = new Stack<>();
         cards.stream().map(this::getCard).forEach(each -> deck.push(each));
-        DiscardCardsResponse discardResponse = distributeCards(deck, room);
+        DiscardCardsResponse discardResponse = distributeCards(deck, room, distributeIndex);
         logger.info("discard response -- {}", discardResponse);
         return discardResponse;
     }
@@ -78,6 +80,13 @@ public class RummyMiscServiceImpl implements RummyMiscService {
 
         String s = gson.toJson(finalShowCards);
         logger.info("show cards inside save show cards {}", s);
+        logger.info("deleting previous show cards");
+
+        try {
+            deleteAllShowCards();
+        } catch (Exception e) {
+            logger.error("");
+        }
 
         try {
             finalCardsRepository.save(finalShowCards);
@@ -97,7 +106,8 @@ public class RummyMiscServiceImpl implements RummyMiscService {
         } catch (Exception e) {
             logger.error("error occurred at {}", e);
         }
-        logger.info("list of final show cards {}", finalcardsOpt);
+        Gson gson = new Gson();
+        logger.info("list of final show cards {}", gson.toJson(finalcardsOpt.get()));
 
         return finalcardsOpt.isPresent() ? finalcardsOpt.get().get(0) : null;
     }
@@ -119,8 +129,17 @@ public class RummyMiscServiceImpl implements RummyMiscService {
         return room;
     }
 
+    @Override
+    public void deleteAllShowCards() {
+        try {
+            logger.info("came inside delete all show cards .. ");
+            finalCardsRepository.deleteAll();
+        } catch (Exception e) {
+            logger.error("Exception occurred while deleting the cards {}", e.toString());
+        }
+    }
 
-    private DiscardCardsResponse distributeCards(Stack<String> cardValues, Room room) {
+    private DiscardCardsResponse distributeCards(Stack<String> cardValues, Room room, int distributeIndex) {
 
         DiscardCardsResponse discardResponse = new DiscardCardsResponse();
 
@@ -131,6 +150,7 @@ public class RummyMiscServiceImpl implements RummyMiscService {
             totalPlayers = players.size();
             String[][] cardsAry = new String[totalPlayers][13];
             List<String[]> cardsByPerson = null;
+            Gson gson = new Gson();
             for (int i = 0; i < 13; i++) {
                 for (int j = 0; j < totalPlayers; j++) {
                     cardsAry[j][i] = cardValues.pop();
@@ -138,12 +158,18 @@ public class RummyMiscServiceImpl implements RummyMiscService {
                 cardsByPerson = Arrays.asList(cardsAry);
             }
 
-            List<PlayerCards> listOfPlayercards = new ArrayList<>();
+            logger.info("cards before distributions .. {}", gson.toJson(cardsByPerson));
+
+            PlayerCards[] listOfPlayercards = new PlayerCards[totalPlayers];
 
             for (int i = 0; i < players.size(); i++) {
-                listOfPlayercards.add(new PlayerCards(players.get(i).getName(), cardsByPerson.get(i)));
+                listOfPlayercards[(i + 1 + distributeIndex) % totalPlayers] =
+                        new PlayerCards(players.get((i + 1 + distributeIndex) % totalPlayers).getName(), cardsByPerson.get(i));
             }
-            discardResponse.setPlayersCards(listOfPlayercards);
+
+            logger.info("cards after distributions .. {}", gson.toJson(listOfPlayercards));
+
+            discardResponse.setPlayersCards(Arrays.asList(listOfPlayercards));
             discardResponse.setOpenCard(cardValues.pop());
             int jokerIndex = getJokerIndex(cardValues);
             discardResponse.setOpenJoker(cardValues.get(jokerIndex));
