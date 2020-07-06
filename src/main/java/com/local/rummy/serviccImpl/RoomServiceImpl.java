@@ -31,6 +31,7 @@ public class RoomServiceImpl implements RoomService {
     public Room getRoomById(RoomId quantity) {
         Optional<Room> id = roomRepository.findById(quantity.getId());
         if (id.isPresent()) {
+            logger.info("room id .. {}", id.get());
             return id.get();
         }
         return null;
@@ -46,6 +47,7 @@ public class RoomServiceImpl implements RoomService {
             e.printStackTrace();
         }
         roomsIterable.iterator().forEachRemaining(room -> rooms.add(room));
+
         return rooms;
     }
 
@@ -72,6 +74,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public List<Players> getListOfUsersByRoomId(String id) {
         Optional<Room> roomById = roomRepository.findById(id);
+        logger.info("players {}", roomById.get().getPlayersList());
         return roomById.get().getPlayersList();
     }
 
