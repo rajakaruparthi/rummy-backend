@@ -22,6 +22,8 @@ public class Room {
         return playersList;
     }
 
+    public int distributeIndex;
+
     public Room(String roomname, List<Players> playersList) {
         this.roomname = roomname;
         this.playersList = playersList;
@@ -33,7 +35,7 @@ public class Room {
     public String getPassword() {
         return password;
     }
-
+:
     public void setPassword(String password) {
         this.password = password;
     }
@@ -56,5 +58,13 @@ public class Room {
 
     public void setRoomname(String roomname) {
         this.roomname = roomname;
+    }
+
+    public int getDistributeIndex() {
+        return distributeIndex;
+    }
+
+    public void setDistributeIndex(int distributeIndex) {
+        this.distributeIndex = distributeIndex;
     }
 }
